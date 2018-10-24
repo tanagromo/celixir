@@ -7,8 +7,10 @@ defmodule UserApiWeb.UserController do
         |> put_status(401)
         |> text("unauth")
     end
-    def show(conn, _params) do
-        case UserApi.User.search(1) do
+    def show(conn, %{"id" => user_id}) do
+        IO.inspect(self()) #me devuelve el pid de donde se esta ejecutando todo ese codigo
+        
+        case UserApi.User.search(user_id) do
             nil -> 
                 conn
                 |> put_status(404)
@@ -19,7 +21,19 @@ defmodule UserApiWeb.UserController do
                 |> text("Exito!!")
         end
     end
-    def create(conn, _params) do
+    def create(conn, params) do
+        changeset = UserApi.User.create_changeset(%UserApi.User{}, params)
+        case changeset.valid? do
+            true ->
+                user = UserApi.Repo.insert!(changeset) #! si falla lanza una exception
+                conn
+                |> put_status(200)
+                |> text("Elemento insertado")
+                false ->
+                    conn
+                    |> put_state(400)
+                    |> text("Error en los datos")
+        end
         conn
         |> put_status(200)
         |> text("create")
